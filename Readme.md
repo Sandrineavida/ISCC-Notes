@@ -2,7 +2,7 @@ The paper we chose to present is : **Deep Evidential Fusion with Uncertainty Qua
 
 ---
 
-## 1. **Introduction (2 minutes)**
+## 1. **Introduction (1 min 25 sec)**
   In clinical practice, different imaging modalities like PET, CT or MRI sequences are often used together to provide a more comprehensive understanding of a patient's condition. For example, PET images are effective at highlighting metabolic activity, whereas CT images are better at showing anatomical structures. By combining these two, we can achieve a more accurate diagnosis and understand the condition better.
 
  However, there is a major challenge. Traditional methods for segmenting multimodal images often assume that all sources are equally reliable. But, in reality, each imaging modality may have different levels of quality, resolution, and reliability. Relying on these equally can lead to errors in segmentation, which ultimately affects the diagnosis.
@@ -41,7 +41,7 @@ The paper we chose to present is : **Deep Evidential Fusion with Uncertainty Qua
 
 ---
 
-## 2. **Proposed framework ( minutes)**
+## 2. **Proposed framework (5 minutes)**
 
 ![alt text](model-structure.jpg)
 
@@ -85,7 +85,7 @@ Feature Extraction Module (FE):
 
 ### 2.2 **Evidence Mapping (EM)**:
 
-These extracted features are transformed into mass functions using the Evidential Neural Network (ENN) module.
+These extracted features are transformed into mass functions using the Evidential Neural Network (ENN) as the EM module.
 
 ![alt text](ENN.jpg)
 
@@ -101,7 +101,7 @@ Prototypes are obtained by running the k-means algorithm in the space of feature
 ⨻ In this paper, I is set to 10 for the PET-CT lymphoma dataset and 20 for the multi-MRI BraTS2021 dataset.
 
 #### 2.2.2 $s_i^t$: Similarity between input feature vector $x$ and prototype $p_i^t$
-- The activation of unit i in the prototype layer is
+Then, the activation of unit i in the prototype layer is defined as follows:
 
 $$
 s_i^t = \alpha_i^t \exp\left(-\gamma_i^t \|x - p_i^t\|^2\right), \quad \gamma_i^t > 0, \quad \alpha_i^t \in [0, 1]
@@ -137,7 +137,7 @@ $$
 
 ## 2.3 **Multi-modality Evidence Fusion (MMEF)**:
 
-After gathering evidence from each modality, the next step is to fuse them. Instead of fusing at the mass function level, MMEF fuses at the contour function level, which helps facilitate the plausibility-probability transformation. These contour functions are contextually discounted using T discounting vectors (reliability) $\beta = (\beta^1, \dots, \beta^T)$, $\beta^t = \left ( \beta_1^t, \dots, \beta_K^t \right )$, representing the degree of belief that modality t is reliable when the actual class of voxel n is $\theta_k$. The KT reliability coefficients in $\beta$ are learnable parameters, initialized to 0.5 in this paper.
+After gathering evidence from each modality, the next step is to fuse them. Instead of fusing at the mass function level, MMEF fuses at the contour function level, which helps facilitate the plausibility-probability transformation. These contour functions are contextually discounted using T discounting (reliability) vectors $\beta = (\beta^1, \dots, \beta^T)$, $\beta^t = \left ( \beta_1^t, \dots, \beta_K^t \right )$, representing the degree of belief that modality t is reliable when the actual class of voxel n is $\theta_k$. The KT reliability coefficients in $\beta$ are learnable parameters, initialized to 0.5 in this paper.
 
 1. Fusion evidence gathered from each modality on contour function level:
 
@@ -166,7 +166,7 @@ $$
 
 
 ---
-## 3 Loss function
+## 3 Loss function (30 sec)
 
 The framework proposed by the paper is optimised by minimising the following loss function:
 $$
@@ -182,12 +182,12 @@ evaluates the segmentation performance of each modality individually and then ag
 Where $N$ is the number of voxels, and $G_{kn} = 1$ if voxel $n$ belongs to class $\theta_k$, otherwise $G_{kn} = 0$.
 
 ---
-## 4. Learnable parameters
+## 4. Learnable parameters ( 15 sec)
 - FM module：weights
 - EM module：$\alpha_i^t, \gamma_i^t, u_{ik}^t$
 - MMEF module: $\beta$
 ---
-## 5. Training Process
+## 5. Training Process (25 sec)
 
 1. Train the FE module independently.
 
@@ -197,7 +197,7 @@ Where $N$ is the number of voxels, and $G_{kn} = 1$ if voxel $n$ belongs to clas
 
 ---
 
-## 5. **Experimental Results ( minutes)**
+## 6. **Experimental Results ( minutes)**
    <!-- - **Datasets**:
      - The framework was tested on:
        - **PET-CT lymphoma dataset**: PET provides functional insights, while CT offers structural details.
@@ -208,7 +208,7 @@ Where $N$ is the number of voxels, and $G_{kn} = 1$ if voxel $n$ belongs to clas
 
 ---
 
-## 6. **Conclusion (1 minute)**
+## 7. **Conclusion (1 minute)**
    <!-- - **Summary**:
      - The paper presents a novel **deep evidential fusion framework** that uses **Dempster-Shafer theory** to solve the problem of multimodal medical image segmentation.
      - By integrating the **DST-based evidence mapping** and **reliability learning**, the framework not only improves segmentation accuracy but also provides a way to quantify uncertainty, which is crucial in medical applications.

@@ -80,7 +80,7 @@ $$
 
 
 ## 2.3 **Multi-modality Evidence Fusion (MMEF)**:
-After evidence is gathered from each modality, 接下来便是要将这些evidence再进行融合。however，instead of 在mass function的层面上进行融合，MMEF是在contour function 层面上进行融合的，这将有利于后续的plausibility-probability transformation；并且，这些contour function是被contextually discounted的。具体而言，文中使用了T个 vectors of discounting (reliability) $\beta = (\beta^1, \dots, \beta^T)$, $\beta^t = \left ( \beta_1^t, \dots, \beta_K^t \right ) $, 这个向量代表了degree of belief that the modality t is reliable when it is known that the actual class of voxel n is $\theta_k$. The KT reliability coefficients in $\beta$ 是learnable parameters （在本文的语境下被初始化为0.5）。、
+After evidence is gathered from each modality, 接下来便是要将这些evidence再进行融合。however，instead of 在mass function的层面上进行融合，MMEF是在contour function 层面上进行融合的，这将有利于后续的plausibility-probability transformation；并且，这些contour function是被contextually discounted的。具体而言，文中使用了T个 vectors of discounting (reliability) $\beta = (\beta^1, \dots, \beta^T)$, $\beta^t = \left ( \beta_1^t, \dots, \beta_K^t \right ) $, 这个向量代表了degree of belief that the modality t is reliable when it is known that the actual class of voxel n is $\theta_k$. The KT reliability coefficients in $\beta$ 是learnable parameters （在本文的语境下被初始化为0.5）。
 
 1. Fusion evidence gathered from each modality on contour function level:
 
