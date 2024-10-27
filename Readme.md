@@ -1,4 +1,4 @@
-The paper we choise to present is : **Deep Evidential Fusion with Uncertainty Quantification for Multimodal Medical Image Segmentation**
+The paper we chose to present is : **Deep Evidential Fusion with Uncertainty Quantification for Multimodal Medical Image Segmentation**
 
 ---
 
