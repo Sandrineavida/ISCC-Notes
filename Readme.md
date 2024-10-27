@@ -3,12 +3,41 @@ The paper we choise to present is : **Deep Evidential Fusion with Uncertainty Qu
 ---
 
 ## 1. **Introduction (2 minutes)**
-   - **Overview of Multimodal Medical Imaging**:
-     - Multimodal medical images, such as PET-CT or MRI sequences, provide complementary information about patients' conditions. For instance, PET images highlight metabolic activity, while CT images show anatomical structures. These images, when used together, allow for more accurate diagnoses.
-   - **The Problem**:
-     - Traditional fusion methods for segmenting multimodal medical images often assume that all data sources are equally reliable. However, real-world medical images vary in quality, resolution, and their relative reliability, and relying on them equally can lead to inaccurate segmentation and diagnosis.
-   - **The Aim of the Paper**:
-     - This paper proposes a **deep evidential fusion framework** to address this issue by using **Dempster-Shafer theory** (DST), which models both data uncertainty and reliability, providing a more accurate and explainable segmentation.
+  In clinical practice, different imaging modalities like PET, CT or MRI sequences are often used together to provide a more comprehensive understanding of a patient's condition. For example, PET images are effective at highlighting metabolic activity, whereas CT images are better at showing anatomical structures. By combining these two, we can achieve a more accurate diagnosis and understand the condition better.
+
+ However, there is a major challenge. Traditional methods for segmenting multimodal images often assume that all sources are equally reliable. But, in reality, each imaging modality may have different levels of quality, resolution, and reliability. Relying on these equally can lead to errors in segmentation, which ultimately affects the diagnosis.
+
+ This paper aims to address this issue by proposing a deep evidential fusion framework. This approach leverages Dempster-Shafer Theory to quantify both the uncertainty and the reliability of each imaging modality. This way, we can achieve a more accurate and explainable segmentation result, thus leading to better clinical decisions.
+
+ ### PPT Short Phrases Version
+
+    Multimodal Medical Imaging:
+
+        PET-CT/MRI: Complementary information.
+
+        PET: Highlights metabolic activity.
+
+        CT: Shows anatomical structures.
+
+        Combined: More accurate diagnoses.
+
+    Problem:
+
+        Traditional fusion methods: Assume equal reliability.
+
+        Real-world variation: Quality, resolution, reliability.
+
+        Result: Potential segmentation errors.
+
+    Aim:
+
+        Deep evidential fusion framework.
+
+        Uses Dempster-Shafer Theory.
+
+        Models uncertainty and reliability.
+
+        Goal: More accurate, explainable segmentation.
 
 ---
 
@@ -24,37 +53,65 @@ The framework proposed by this paper can be devided into 3 modules as depicted i
 Each modality has its own FE+EM+MMEF.
 
 ### 2.1 **Feature Extraction (FE)**:
-- First, the framework uses deep learning models like UNet or nnFormer as the FE module to extract relevant features from each modality independently.
-- For example, 假设我们输入FE的图像为大小为128x128x128的单通道灰度图，那么我们通过FE后得到的输出为一个空间大小不变，单通道变为H通道的图像，即，我们提取出的特征是H维度的，H is the number of features computed at each voxel.
-- \* 在本文中，对于PET-CT lymphoma dataset，H被设置为2；对于multi-MRI BraTS2021, H被设置为4.
+
+First, the framework uses deep learning models like UNet or nnFormer as the FE module to extract relevant features from each modality independently.
+
+For example, suppose we input an image of size 128x128x128 as a single-channel grayscale image into the FE module. The output will be an image with the same spatial size but with H channels instead of a single channel. In other words, we extract H-dimensional features, where H is the number of features computed at each voxel.
+
+⨻ In this paper, H is set to 2 for the PET-CT lymphoma dataset and 4 for the multi-MRI BraTS2021 dataset.
+
+#### ppt
+
+```
+Feature Extraction Module (FE):
+
+  - Deep learning models: UNet, nnFormer.
+
+  - Independent feature extraction per modality.
+
+  - Example: 
+
+    -  Input: 128x128x128 single-channel image.
+
+    -  Output: H-channel image (same spatial size).
+
+  - H values:
+
+    -  PET-CT lymphoma dataset: H = 2.
+
+    -  Multi-MRI BraTS2021 dataset: H = 4.
+
+```
 
 ### 2.2 **Evidence Mapping (EM)**:
-- These extracted features are transformed into **mass functions** using the **Evidential Neural Network (ENN)** module.
-     <!-- , which assigns levels of belief (mass) to each possible class (e.g., tumor, non-tumor). -->
+
+These extracted features are transformed into mass functions using the Evidential Neural Network (ENN) module.
 
 ![alt text](ENN.jpg)
 
-outputs mass functions representing evidence about the class of each voxel, resulting in a tensor of size 128X128X128X(K+1), where K+1 is the number of masses (one for each class $\theta_k$ and one for the frame of discernment $\Theta$).
+The output mass functions represent evidence about the class of each voxel, resulting in a tensor of size 128x128x128x(K+1), where K+1 is the number of masses (one for each class $\theta_k$ and one for the frame of discernment $\Theta$).
 
-- 上图展示了ENN module的结构，它由一个proptotype activation layer, 一个 mass calculation layer和一个combination layer构成。
+The figure above shows the structure of the ENN module, which consists of a prototype activation layer, a mass calculation layer, and a combination layer.
 
 
 #### 2.2.1 Prototypes $p_i$ in the space of features extracted by the FE module
-- prototypes是通过The k-means algorithm is run in the space of features extracted by the FE module得到的; 我们设一共有I个prototypes: $p_1^t, \dots, p_I^t$。
 
-- \* 在本文中，对于PET-CT lymphoma dataset，I被设置为10；对于multi-MRI BraTS2021, I被设置为20.
+Prototypes are obtained by running the k-means algorithm in the space of features extracted by the FE module; let's assume there are I prototypes: $p_1^t, \dots, p_I^t$.
 
-#### $s_i$: 输入特征向量$x$与prototype $p_i^t$之间的相似度
+⨻ In this paper, I is set to 10 for the PET-CT lymphoma dataset and 20 for the multi-MRI BraTS2021 dataset.
+
+#### 2.2.2 $s_i^t$: Similarity between input feature vector $x$ and prototype $p_i^t$
 - The activation of unit i in the prototype layer is
 
 $$
 s_i^t = \alpha_i^t \exp\left(-\gamma_i^t \|x - p_i^t\|^2\right), \quad \gamma_i^t > 0, \quad \alpha_i^t \in [0, 1]
 $$
 
-$\gamma_i^t$和$\alpha_i^t$是learnable parameters（本文中，它们被初始化为0.5和0.01）。$s_i^t$反映了输入特征向量$x$与prototype $p_i^t$之间的相似度。
+$\gamma_i^t$ and $\alpha_i^t$ are learnable parameters (in this paper, they are initialised as 0.5 and 0.01, respectively). $s_i^t$ reflects the similarity between the input feature vector $x$ and prototype $p_i^t$.
 
-#### 2.2.2 $m_i$: 使用$s_i$进行reliability discount得到的mass function
-- 而后，使用第二个隐藏层来计算mass function $m_i^t$，$m_i^t$代表了prototype $p_i^t$作为证据提供的意见，$m_i^t$的focal sets是singletons $\theta_k$（k=1,...K，K为图上标签的类型数目）和全集$\Theta$。$m_i^t$ 的定义如下：
+#### 2.2.3 $m_i$: Mass function obtained from reliability discounting of $s_i^t$
+
+Next, a second hidden layer is used to compute the mass function $m_i^t$, which represents the belief provided by prototype $p_i^t$. The focal sets of $m_i^t$ are singletons $\theta_k$ ($k=1, \dots, K$, where K is the number of label types, or classes) and the universal set $\Theta$. The mass function is defined as follows:
 
 $$
 m_i^t(\{\theta_k\}) = u_{ik}^t s_i^t, k=1, \dots, K,
@@ -63,11 +120,11 @@ $$
 m_i^t(\Theta) = 1-s_i^t
 $$
 
-其中，$u_{ik}^t$是learnable parameter，它反映了membership degree of prototype $p_i^t$ to class $\theta_k$。本文中，它的初始化是通过“initialised randomly by drawing from uniform random numbers and normalising”来实现的。
+where $u_{ik}^t$ is a learnable parameter that represents the membership degree of prototype $p_i^t$ to class $\theta_k$. In this paper, it is initialised by drawing from uniform random numbers and normalizing.
 
-#### 2.2.3 $\oplus^I_{i=1} m_i^t$ : fuse the mass functions to summarise the evidence provided by the I prototypes
+#### 2.2.4 $\oplus^I_{i=1} m_i^t$ : Fusing mass functions to summarise evidence provided by I prototypes
 
-- finally, 在第三个隐藏层上，我们将I个mass function通过Dempster's rule进行结合得到所有证据对于输入特征向量x的综合性意见the fused mass function m.
+Finally, in the third hidden layer, the I mass functions are combined using Dempster's rule to provide a comprehensive opinion on the fused mass function $m$ for input feature vector $x$.
 
 Dempster's rule: 
 $$
@@ -78,9 +135,9 @@ $$
 $$
 
 
-
 ## 2.3 **Multi-modality Evidence Fusion (MMEF)**:
-After evidence is gathered from each modality, 接下来便是要将这些evidence再进行融合。however，instead of 在mass function的层面上进行融合，MMEF是在contour function 层面上进行融合的，这将有利于后续的plausibility-probability transformation；并且，这些contour function是被contextually discounted的。具体而言，文中使用了T个 vectors of discounting (reliability) $\beta = (\beta^1, \dots, \beta^T)$, $\beta^t = \left ( \beta_1^t, \dots, \beta_K^t \right ) $, 这个向量代表了degree of belief that the modality t is reliable when it is known that the actual class of voxel n is $\theta_k$. The KT reliability coefficients in $\beta$ 是learnable parameters （在本文的语境下被初始化为0.5）。、
+
+After gathering evidence from each modality, the next step is to fuse them. Instead of fusing at the mass function level, MMEF fuses at the contour function level, which helps facilitate the plausibility-probability transformation. These contour functions are contextually discounted using T discounting vectors (reliability) $\beta = (\beta^1, \dots, \beta^T)$, $\beta^t = \left ( \beta_1^t, \dots, \beta_K^t \right )$, representing the degree of belief that modality t is reliable when the actual class of voxel n is $\theta_k$. The KT reliability coefficients in $\beta$ are learnable parameters, initialized to 0.5 in this paper.
 
 1. Fusion evidence gathered from each modality on contour function level:
 
@@ -116,11 +173,13 @@ $$
 loss = loss_s + loss_f
 $$
 
-- $\text{loss}_s = \sum_{t=1}^{T} \left[ 1 - \frac{2 \sum_{n=1}^{N} \sum_{k=1}^{K} m_n^t(\{\theta_k\}) \times G_{kn}}{\sum_{n=1}^{N} \sum_{k=1}^{K} \left( m_n^t(\{\theta_k\}) + G_{kn} \right)} \right]$ 用以量化每一个模态的segmentation performance的加和
+- $\text{loss}_s = \sum_{t=1}^{T} \left[ 1 - \frac{2 \sum_{n=1}^{N} \sum_{k=1}^{K} m_n^t(\{\theta_k\}) \times G_{kn}}{\sum_{n=1}^{N} \sum_{k=1}^{K} \left( m_n^t(\{\theta_k\}) + G_{kn} \right)} \right]$ 
+evaluates the segmentation performance of each modality individually and then aggregates these performances.
 
-- $\text{loss}_f = 1 - \frac{2 \sum_{n=1}^{N} \sum_{k=1}^{K} {^{\beta} p_n(\theta_k)} \times G_{kn}}{\sum_{n=1}^{N} \sum_{k=1}^{K} {^{\beta} p_n(\theta_k)} + G_{kn}}$ 用以量化在combine了T个modality后的segmentation performance。
 
-其中，$N$是voxels的个数；$G_kn=1$当vocel n 属于类别$\theta_k$，否则等于0。
+- $\text{loss}_f = 1 - \frac{2 \sum_{n=1}^{N} \sum_{k=1}^{K} {^{\beta} p_n(\theta_k)} \times G_{kn}}{\sum_{n=1}^{N} \sum_{k=1}^{K} {^{\beta} p_n(\theta_k)} + G_{kn}}$ is used to quantify the segmentation performance after combining all T modalities.
+
+Where $N$ is the number of voxels, and $G_{kn} = 1$ if voxel $n$ belongs to class $\theta_k$, otherwise $G_{kn} = 0$.
 
 ---
 ## 4. Learnable parameters
@@ -128,13 +187,13 @@ $$
 - EM module：$\alpha_i^t, \gamma_i^t, u_{ik}^t$
 - MMEF module: $\beta$
 ---
-## 5. 训练过程
+## 5. Training Process
 
-1）FM 单独进行训练。
+1. Train the FE module independently.
 
-2）FM训练完成后固定weights, 优化EM和MMEF。
+2. After training the FE module, fix the weights and optimize the EM and MMEF modules.
 
-3）FM+EM+MMEF 合体一起训练几个epoch进行fine tune。
+3. Train the combined model (FE + EM + MMEF) together for a few epochs to perform fine-tuning.
 
 ---
 
