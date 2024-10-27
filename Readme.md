@@ -5,7 +5,7 @@ The paper we chose to present is : **Deep Evidential Fusion with Uncertainty Qua
 ## 1. **Introduction (1 min 25 sec)**
   In clinical practice, different imaging modalities like PET, CT or MRI sequences are often used together to provide a more comprehensive understanding of a patient's condition. For example, PET images are effective at highlighting metabolic activity, whereas CT images are better at showing anatomical structures. By combining these two, we can achieve a more accurate diagnosis and understand the condition better.
 
- However, there is a major challenge. Traditional methods for segmenting multimodal images often assume that all sources are equally reliable. But, in reality, each imaging modality may have different levels of quality, resolution, and reliability. Relying on these equally can lead to errors in segmentation, which ultimately affects the diagnosis.
+ However, there is a major challenge. Traditional methods for segmenting multimodal images often assume that all sources are equally reliable. But, in reality, each imaging modality may have different levels of quality, resolution, and reliability. Relying on these modalities equally can lead to errors in segmentation, which ultimately affects the diagnosis.
 
  This paper aims to address this issue by proposing a deep evidential fusion framework. This approach leverages Dempster-Shafer Theory to quantify both the uncertainty and the reliability of each imaging modality. This way, we can achieve a more accurate and explainable segmentation result, thus leading to better clinical decisions.
 
@@ -45,16 +45,16 @@ The paper we chose to present is : **Deep Evidential Fusion with Uncertainty Qua
 
 ![alt text](model-structure.jpg)
 
-The framework proposed by this paper can be devided into 3 modules as depicted in the picture: 
+The framework proposed by this paper can be divided into 3 modules as depicted in the picture: 
 - a Feature Extraction module (FE)
 - an Evidence Mapping module (EM)
 - and a Multi-modality Evidence Fusion module (MMEF)
 
-Each modality has its own FE+EM+MMEF.
+Each modality has its own FE and EM module.
 
 ### 2.1 **Feature Extraction (FE)**:
 
-First, the framework uses deep learning models like UNet or nnFormer as the FE module to extract relevant features from each modality independently.
+First, the framework uses deep learning models like UNet, nnUNet or nnFormer as the FE module to extract relevant features from each modality independently.
 
 For example, suppose we input an image of size 128x128x128 as a single-channel grayscale image into the FE module. The output will be an image with the same spatial size but with H channels instead of a single channel. In other words, we extract H-dimensional features, where H is the number of features computed at each voxel.
 
@@ -85,18 +85,18 @@ Feature Extraction Module (FE):
 
 ### 2.2 **Evidence Mapping (EM)**:
 
-These extracted features are transformed into mass functions using the Evidential Neural Network (ENN) as the EM module.
+Afterwards, these extracted features are transformed into mass functions using the Evidential Neural Network (ENN) as the EM module.
 
 ![alt text](ENN.jpg)
 
 The output mass functions represent evidence about the class of each voxel, resulting in a tensor of size 128x128x128x(K+1), where K+1 is the number of masses (one for each class $\theta_k$ and one for the frame of discernment $\Theta$).
 
-The figure above shows the structure of the ENN module, which consists of a prototype activation layer, a mass calculation layer, and a combination layer.
+The figure here shows the structure of the ENN model, which consists of a prototype activation layer, a mass calculation layer, and a combination layer.
 
 
 #### 2.2.1 Prototypes $p_i$ in the space of features extracted by the FE module
 
-Prototypes are obtained by running the k-means algorithm in the space of features extracted by the FE module; let's assume there are I prototypes: $p_1^t, \dots, p_I^t$.
+The prototypes used in an ENN are obtained by running the k-means algorithm in the space of features extracted by the FE module; assume there are I prototypes: $p_1^t, \dots, p_I^t$.
 
 ⨻ In this paper, I is set to 10 for the PET-CT lymphoma dataset and 20 for the multi-MRI BraTS2021 dataset.
 
@@ -107,9 +107,9 @@ $$
 s_i^t = \alpha_i^t \exp\left(-\gamma_i^t \|x - p_i^t\|^2\right), \quad \gamma_i^t > 0, \quad \alpha_i^t \in [0, 1]
 $$
 
-$\gamma_i^t$ and $\alpha_i^t$ are learnable parameters (in this paper, they are initialised as 0.5 and 0.01, respectively). $s_i^t$ reflects the similarity between the input feature vector $x$ and prototype $p_i^t$.
+where $\gamma_i^t$ and $\alpha_i^t$ are learnable parameters (in this paper, they are initialised as 0.5 and 0.01, respectively). $s_i^t$ reflects the similarity between the input feature vector $x$ and prototype $p_i^t$.
 
-#### 2.2.3 $m_i$: Mass function obtained from reliability discounting of $s_i^t$
+#### 2.2.3 $m_i^t$: mass function with discount rate $(1 - s_i^t)$
 
 Next, a second hidden layer is used to compute the mass function $m_i^t$, which represents the belief provided by prototype $p_i^t$. The focal sets of $m_i^t$ are singletons $\theta_k$ ($k=1, \dots, K$, where K is the number of label types, or classes) and the universal set $\Theta$. The mass function is defined as follows:
 
@@ -137,7 +137,9 @@ $$
 
 ## 2.3 **Multi-modality Evidence Fusion (MMEF)**:
 
-After gathering evidence from each modality, the next step is to fuse them. Instead of fusing at the mass function level, MMEF fuses at the contour function level, which helps facilitate the plausibility-probability transformation. These contour functions are contextually discounted using T discounting (reliability) vectors $\beta = (\beta^1, \dots, \beta^T)$, $\beta^t = \left ( \beta_1^t, \dots, \beta_K^t \right )$, representing the degree of belief that modality t is reliable when the actual class of voxel n is $\theta_k$. The KT reliability coefficients in $\beta$ are learnable parameters, initialized to 0.5 in this paper.
+After gathering evidence from each modality, the next step is to fuse them. Instead of fusing at the mass function level, MMEF fuses at the contour function level, which helps facilitate the plausibility-probability transformation. These contour functions are contextually discounted using T discounting (reliability) vectors $\beta = (\beta^1, \dots, \beta^T)$, $\beta^t = \left ( \beta_1^t, \dots, \beta_K^t \right )$, with $\beta_k^t$ representing the degree of belief that modality t is reliable when the actual class of voxel n is $\theta_k$. The KT reliability coefficients in $\beta$ are learnable parameters, initialized to 0.5 in this paper.
+
+The following are the mathematical expressions for the MMEF process:
 
 1. Fusion evidence gathered from each modality on contour function level:
 
@@ -151,7 +153,7 @@ $$
 ^{\beta^t} pl^t_n \left ( \theta_k \right ) = 1 - \beta^t_k + \beta^t_k pl^t_n \left ( \theta_k \right )
 $$
 
-1.3\) Combining contour function at vocel n:
+1.3\) Combining contour function at voxel n:
 $$
 ^{\beta}pl_n(\theta_k) \propto \prod_{t=1}^{T} {^{\beta^t}pl_n^t(\theta_k)},  k=1, \dots, K
 $$
@@ -179,7 +181,7 @@ evaluates the segmentation performance of each modality individually and then ag
 
 - $\text{loss}_f = 1 - \frac{2 \sum_{n=1}^{N} \sum_{k=1}^{K} {^{\beta} p_n(\theta_k)} \times G_{kn}}{\sum_{n=1}^{N} \sum_{k=1}^{K} {^{\beta} p_n(\theta_k)} + G_{kn}}$ is used to quantify the segmentation performance after combining all T modalities.
 
-Where $N$ is the number of voxels, and $G_{kn} = 1$ if voxel $n$ belongs to class $\theta_k$, otherwise $G_{kn} = 0$.
+Note that $N$ is the number of voxels, and $G_{kn} = 1$ if voxel $n$ belongs to class $\theta_k$, otherwise $G_{kn} = 0$.
 
 ---
 ## 4. Learnable parameters ( 15 sec)
@@ -191,7 +193,7 @@ Where $N$ is the number of voxels, and $G_{kn} = 1$ if voxel $n$ belongs to clas
 
 1. Train the FE module independently.
 
-2. After training the FE module, fix the weights and optimize the EM and MMEF modules.
+2. After training the FE module, fix the weights and optimise the EM and MMEF modules.
 
 3. Train the combined model (FE + EM + MMEF) together for a few epochs to perform fine-tuning.
 
